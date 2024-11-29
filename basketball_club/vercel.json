@@ -14,7 +14,7 @@
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/basketball_club/index.py"
+            "dest": "/"
         }
     ]
 }
