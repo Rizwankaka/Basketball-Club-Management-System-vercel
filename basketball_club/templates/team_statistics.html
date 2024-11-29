@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Team Statistics</h1>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Overall Team Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Total Games</h6>
+                                    <h3>{{ total_games }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Average Points</h6>
+                                    <h3>{{ "%.1f"|format(avg_points) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Average Rebounds</h6>
+                                    <h3>{{ "%.1f"|format(avg_rebounds) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>Average Assists</h6>
+                                    <h3>{{ "%.1f"|format(avg_assists) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Player Performance Rankings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Games Played</th>
+                                    <th>Avg Points</th>
+                                    <th>Avg Rebounds</th>
+                                    <th>Avg Assists</th>
+                                    <th>Avg Minutes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in player_stats %}
+                                <tr>
+                                    <td>{{ stat.player_name }}</td>
+                                    <td>{{ stat.games_played }}</td>
+                                    <td>{{ "%.1f"|format(stat.avg_points) }}</td>
+                                    <td>{{ "%.1f"|format(stat.avg_rebounds) }}</td>
+                                    <td>{{ "%.1f"|format(stat.avg_assists) }}</td>
+                                    <td>{{ "%.1f"|format(stat.avg_minutes) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

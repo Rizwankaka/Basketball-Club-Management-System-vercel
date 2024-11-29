@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold text-primary">Welcome to Dashboard</h1>
+        <div class="text-end">
+            <span class="text-muted">{{ current_user.username }}</span>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Players</h6>
+                            <h2 class="display-6 fw-bold mb-0">{{ players|length }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Active Players</h6>
+                            <h2 class="display-6 fw-bold mb-0">{{ players|length }}</h2>
+                        </div>
+                        <i class="fas fa-basketball-ball fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Avg Team Age</h6>
+                            <h2 class="display-6 fw-bold mb-0">
+                                {% set total_age = namespace(value=0) %}
+                                {% for player in players %}
+                                    {% set age = ((now - player.date_of_birth).days / 365.25) | round | int %}
+                                    {% set total_age.value = total_age.value + age %}
+                                {% endfor %}
+                                {{ (total_age.value / players|length) | round(1) if players|length > 0 else 0 }}
+                            </h2>
+                        </div>
+                        <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Players Table -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Team Roster</h5>
+                    </div>
+                    <a href="{{ url_for('add_player') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Add Player
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-user me-2"></i>Name</th>
+                                    <th><i class="fas fa-basketball-ball me-2"></i>Position</th>
+                                    <th><i class="fas fa-ruler-vertical me-2"></i>Height</th>
+                                    <th><i class="fas fa-calendar-alt me-2"></i>Age</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in players %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary rounded-circle text-white me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                {{ player.first_name[0] }}{{ player.last_name[0] }}
+                                            </div>
+                                            {{ player.first_name }} {{ player.last_name }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ player.position }}</span>
+                                    </td>
+                                    <td>{{ player.height }} cm</td>
+                                    <td>{{ ((now - player.date_of_birth).days / 365.25) | round | int }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions and Stats -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('add_match_statistic') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Add Match Statistics
+                        </a>
+                        <a href="{{ url_for('team_statistics') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-bar me-2"></i>View Team Statistics
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position Distribution -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Position Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="positionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prepare position distribution data
+    const positions = {{ players|map(attribute='position')|list|tojson }};
+    const positionCounts = positions.reduce((acc, pos) => {
+        acc[pos] = (acc[pos] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Create position distribution chart
+    const ctx = document.getElementById('positionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(positionCounts),
+            datasets: [{
+                data: Object.values(positionCounts),
+                backgroundColor: [
+                    '#1a237e',
+                    '#283593',
+                    '#3949ab',
+                    '#3f51b5',
+                    '#5c6bc0'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
