@@ -1,20 +1,35 @@
-from flask import Flask
+from flask import Flask, Request
 import sys
 import os
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Add the parent directory to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 
-from app import app as flask_app
+try:
+    from app import app
+    print("Successfully imported Flask app")
+except Exception as e:
+    print(f"Error importing app: {str(e)}")
+    raise e
 
-# This is the handler Vercel will call
-def handler(request):
+# Add ProxyFix middleware
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
+def handler(request: Request):
     """Handle incoming Vercel requests."""
     try:
-        return flask_app
+        print("Handler called with request method:", request.method)
+        return app
     except Exception as e:
         print(f"Error in handler: {str(e)}")
         return {
             "statusCode": 500,
-            "body": str(e)
+            "body": {
+                "error": str(e),
+                "path": sys.path,
+                "cwd": os.getcwd(),
+                "files": os.listdir(os.getcwd())
+            }
         }
