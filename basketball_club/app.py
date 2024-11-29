@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from urllib.parse import quote_plus
+from urllib.parse import quote
 
 load_dotenv()
 
@@ -20,16 +20,16 @@ if os.environ.get('FLASK_ENV') == 'production':
     database_url = os.environ.get('DATABASE_URL')
     if database_url:
         # Handle special characters in password
-        parts = database_url.split('@')
-        if len(parts) == 2:
-            credentials = parts[0].split(':')
-            if len(credentials) == 3:  # postgresql://user:password format
-                password = quote_plus(credentials[2])
-                database_url = f"{credentials[0]}:{credentials[1]}:{password}@{parts[1]}"
+        if '@' in database_url:
+            prefix, rest = database_url.split('@', 1)
+            parts = prefix.split(':')
+            if len(parts) >= 3:
+                password = quote(parts[2])
+                database_url = f"{parts[0]}:{parts[1]}:{password}@{rest}"
         
         if database_url.startswith('postgres://'):
             database_url = database_url.replace('postgres://', 'postgresql://', 1)
-        if 'supabase' in database_url and '?' not in database_url:
+        if '?' not in database_url:
             database_url += '?sslmode=require'
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
@@ -40,6 +40,13 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Create tables
+with app.app_context():
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"Error creating tables: {e}")
 
 # Models
 class User(UserMixin, db.Model):
@@ -213,6 +220,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
