@@ -1,19 +1,20 @@
+from flask import Flask
 import sys
 import os
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the parent directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import app
+from app import app as flask_app
 
+# This is the handler Vercel will call
 def handler(request):
     """Handle incoming Vercel requests."""
-    if request.method == "POST":
-        return app(request.environ, start_response)
-    elif request.method == "GET":
-        return app(request.environ, start_response)
-    return app
-
-def start_response(status, headers):
-    """WSGI start_response function."""
-    return None
+    try:
+        return flask_app
+    except Exception as e:
+        print(f"Error in handler: {str(e)}")
+        return {
+            "statusCode": 500,
+            "body": str(e)
+        }

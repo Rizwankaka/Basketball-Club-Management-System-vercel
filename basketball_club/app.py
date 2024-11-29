@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 load_dotenv()
 
+# Initialize Flask app
 app = Flask(__name__)
 
 # Configure app for production
@@ -35,18 +36,20 @@ if os.environ.get('FLASK_ENV') == 'production':
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///basketball_club.db'
 
+# Initialize extensions
 db = SQLAlchemy()
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Create tables
+# Create tables within app context
 with app.app_context():
     try:
         db.create_all()
+        print("Database tables created successfully")
     except Exception as e:
-        print(f"Error creating tables: {e}")
+        print(f"Error creating database tables: {e}")
 
 # Models
 class User(UserMixin, db.Model):
@@ -212,6 +215,10 @@ def test_db():
             "status": "error",
             "message": str(e)
         }), 500
+
+@app.route('/api/test')
+def test_route():
+    return {"message": "Flask API is working!"}, 200
 
 @app.route('/logout')
 @login_required
