@@ -71,10 +71,9 @@ class MatchStatistic(db.Model):
 def load_user(id):
     return User.query.get(int(id))
 
-# Routes
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return jsonify({"message": "Welcome to Basketball Club API"}), 200
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -122,9 +121,9 @@ def dashboard():
     players = Player.query.all()
     return render_template('dashboard.html', players=players)
 
-@app.route('/api/test')
-def test_route():
-    return {"message": "Flask API is working!"}, 200
+@app.route('/api/test', methods=['GET'])
+def test():
+    return jsonify({"message": "API is working!"}), 200
 
 # Create tables
 with app.app_context():
@@ -134,6 +133,11 @@ with app.app_context():
     except Exception as e:
         print(f"Error creating database tables: {e}")
 
-# Handler for Vercel
+# Vercel handler
 def handler(request):
-    return app
+    """Handle requests in Vercel serverless function."""
+    if request.method == "POST":
+        return app.handle_request()
+    
+    with app.test_client() as test_client:
+        return test_client.get(request.path)
