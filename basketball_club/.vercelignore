@@ -1,7 +1,11 @@
 *.pyc
 __pycache__
-venv
 .env
+.env.example
+.git
+.gitignore
+.vercel
+venv
 *.db
 .DS_Store
 README.md
