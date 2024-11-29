@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,6 +20,9 @@ if os.environ.get('FLASK_ENV') == 'production':
     if database_url:
         if database_url.startswith('postgres://'):
             database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        # Add SSL mode for Supabase
+        if 'supabase' in database_url and '?' not in database_url:
+            database_url += '?sslmode=require'
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///basketball_club.db'
@@ -176,6 +179,22 @@ def team_statistics():
                          avg_rebounds=avg_stats.avg_rebounds or 0,
                          avg_assists=avg_stats.avg_assists or 0,
                          player_stats=player_stats)
+
+@app.route('/test-db')
+def test_db():
+    try:
+        # Try to create all tables
+        db.create_all()
+        return jsonify({
+            "status": "success",
+            "message": "Database connection successful",
+            "database_url": app.config['SQLALCHEMY_DATABASE_URI'].split('@')[1]  # Only show host part for security
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @app.route('/logout')
 @login_required
